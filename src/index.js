@@ -483,6 +483,21 @@ function tokenizer(source) {
           current += fullMatch.length;
           break;
         }
+        // image
+        let imageMatch = imageRegex.exec(subStr);
+        if (imageMatch && imageMatch.index === 0) {
+          let { 0: fullMatch, 1: alt, 2: src } = imageMatch;
+          insertRawParagraph();
+          tokens.push({
+            type: "image",
+            raw: fullMatch,
+            alt,
+            src,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
       }
 
       // tags or markdown headings
@@ -495,6 +510,22 @@ function tokenizer(source) {
             type: "tag",
             raw: fullMatch,
             tag,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+        // headings
+        let headingMatch = markdownHeadingRegex.exec(subStr);
+        if (headingMatch && headingMatch.index === 0) {
+          console.log(headingMatch);
+          let { 0: fullMatch, 1: hashes, 2: title } = headingMatch;
+          insertRawParagraph();
+          tokens.push({
+            type: "heading",
+            raw: fullMatch,
+            title,
+            level: hashes.length,
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -515,8 +546,8 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 output.forEach((token) => {
-  // if (token.type === "bold") {
-  //   console.log(token);
-  // }
-  console.log(token);
+  if (token.type === "heading") {
+    console.log(token);
+  }
+  // console.log(token);
 });
