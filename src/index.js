@@ -270,6 +270,10 @@ export weight = 100Lbs
 
 export bloodGlucose = 89u
 
+---
+
+A long line of text here with some mixed in tokens too **bold text __with italics inside__ end** and more text too.
+
 `;
 
 console.log(input);
@@ -297,8 +301,6 @@ function tokenizer(source) {
     return [current, current + fullMatch.length];
   }
 
-  let tCharFallThrough = 0;
-
   while (current < source.length) {
     let char = source[current];
 
@@ -319,9 +321,9 @@ function tokenizer(source) {
       // title
       case "t": {
         let titleMatch = titleRegex.exec(subStr);
-        console.log(titleMatch);
-        if (titleMatch) {
+        if (titleMatch && titleMatch.index === 0) {
           let { 0: fullMatch, 1: title } = titleMatch;
+          insertRawParagraph();
           tokens.push({
             type: "title",
             raw: fullMatch,
@@ -331,38 +333,31 @@ function tokenizer(source) {
           current += fullMatch.length;
           break;
         }
-        if (tCharFallThrough === 0) {
-          tCharFallThrough = 1;
-          console.log("Char t, fallthrough");
-        }
       }
       // export
       case "e": {
-        let match = exportRegex.exec(subStr);
-        // not sure what is special with `7` here
-        // but if we don't include that then we will find matches for any `e`
-        // in the string, but just not the right time to find the match
-        if (match) {
-          let { 0: fullMatch, 1: name, 2: value, 3: units } = match;
-          let loc = [current];
-          current += fullMatch.length;
-          loc.push(current);
+        let exportMatch = exportRegex.exec(subStr);
+        if (exportMatch && exportMatch.index === 0) {
+          let { 0: fullMatch, 1: name, 2: value, 3: units } = exportMatch;
+          insertRawParagraph();
           tokens.push({
             type: "export",
             raw: fullMatch,
             name,
             value,
             units,
-            loc
+            loc: getLocation(fullMatch)
           });
+          current += fullMatch.length;
           break;
         }
       }
       // inline and block code elements
       case "`": {
         let codeBlockMatch = markdownCodeFenceRegex.exec(subStr);
-        if (codeBlockMatch) {
+        if (codeBlockMatch && codeBlockMatch.index === 0) {
           let { 0: fullMatch, 2: language, 3: code } = codeBlockMatch;
+          insertRawParagraph();
 
           tokens.push({
             type: "code-block",
@@ -376,9 +371,9 @@ function tokenizer(source) {
         }
 
         let inlineCodeMatch = inlineCodeRegex.exec(subStr);
-        if (inlineCodeMatch) {
+        if (inlineCodeMatch && inlineCodeMatch.index === 0) {
           let { 0: fullMatch, 1: code } = inlineCodeMatch;
-
+          insertRawParagraph();
           tokens.push({
             type: "inline-code",
             raw: fullMatch,
@@ -392,12 +387,13 @@ function tokenizer(source) {
       // bold and list elements
       case "*": {
         let boldMatch = boldRegex.exec(subStr);
-        if (boldMatch) {
+        if (boldMatch && boldMatch.index === 0) {
           let { 0: fullMatch, 1: children } = boldMatch;
+          insertRawParagraph();
           tokens.push({
             type: "bold",
             raw: fullMatch,
-            children,
+            children: tokenizer(children),
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -407,8 +403,9 @@ function tokenizer(source) {
       case "-": {
         // horizontal rules
         let hrMatch = horizontalRuleRegex.exec(subStr);
-        if (hrMatch) {
+        if (hrMatch && hrMatch.index === 0) {
           let { 0: fullMatch } = hrMatch;
+          insertRawParagraph();
           tokens.push({
             type: "horizontal-rule",
             loc: getLocation(fullMatch)
@@ -425,9 +422,9 @@ function tokenizer(source) {
       case `~`: {
         // could be a strike through or an indeterminate checkbox or a codeblock
         let codeBlockMatch = markdownCodeFenceRegex.exec(subStr);
-        if (codeBlockMatch) {
+        if (codeBlockMatch && codeBlockMatch.index === 0) {
           let { 0: fullMatch, 2: language, 3: code } = codeBlockMatch;
-
+          insertRawParagraph();
           tokens.push({
             type: "code-block",
             raw: fullMatch,
@@ -440,12 +437,13 @@ function tokenizer(source) {
         }
 
         let strikethroughMatch = strikethroughRegex.exec(subStr);
-        if (strikethroughMatch) {
+        if (strikethroughMatch && strikethroughMatch.index === 0) {
           let { 0: fullMatch, 1: children } = strikethroughMatch;
+          insertRawParagraph();
           tokens.push({
             type: "strikethrough",
             raw: fullMatch,
-            children,
+            children: tokenizer(children),
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -456,12 +454,13 @@ function tokenizer(source) {
       case "_": {
         // could be italics
         let italicsMatch = italicsRegex.exec(subStr);
-        if (italicsMatch) {
+        if (italicsMatch && italicsMatch.index === 0) {
           let { 0: fullMatch, 1: children } = italicsMatch;
+          insertRawParagraph();
           tokens.push({
             type: "italics",
             raw: fullMatch,
-            children,
+            children: tokenizer(children),
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -472,12 +471,13 @@ function tokenizer(source) {
       case "!": {
         // could be an image or a mark element
         let highlightMatch = markRegex.exec(subStr);
-        if (highlightMatch) {
+        if (highlightMatch && highlightMatch.index === 0) {
           let { 0: fullMatch, 1: children } = highlightMatch;
+          insertRawParagraph();
           tokens.push({
             type: "highlight",
             raw: fullMatch,
-            children,
+            children: tokenizer(children),
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -488,8 +488,9 @@ function tokenizer(source) {
       // tags or markdown headings
       case "#": {
         let tagMatch = tagRegex.exec(subStr);
-        if (tagMatch) {
+        if (tagMatch && tagMatch.index === 0) {
           let { 0: fullMatch, 1: tag } = tagMatch;
+          insertRawParagraph();
           tokens.push({
             type: "tag",
             raw: fullMatch,
@@ -497,18 +498,12 @@ function tokenizer(source) {
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
-          // console.log(input[current]);
           break;
         }
       }
       default: {
-        if (tCharFallThrough === 1) {
-          console.log("t char fallthrough to default");
-          tCharFallThrough = 2;
-          console.log({ char, current });
-        }
         state.text += char;
-        if (current === input.length - 1 && state.text.length > 0) {
+        if (current === source.length - 1 && state.text.length > 0) {
           insertRawParagraph();
         }
         current++;
@@ -520,7 +515,8 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 output.forEach((token) => {
-  if (token.type === "paragraph") {
-    console.log(token);
-  }
+  // if (token.type === "bold") {
+  //   console.log(token);
+  // }
+  console.log(token);
 });
