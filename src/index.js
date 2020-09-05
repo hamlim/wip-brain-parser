@@ -89,7 +89,10 @@ let regularBulletsRegex = new RegExp(
  * A. thing
  *   B. another
  */
-let characterBulletsRegex = new RegExp("^( {0,})([a-zA-Z0-9])\\. {0,}(.+)");
+let characterBulletsRegex = new RegExp(
+  "^(\\t|\\s{2,}){0,}([a-zA-Z0-9])\\. {1,}(.+)",
+  "m"
+);
 /**
  * Matches:
  * `code`
@@ -278,6 +281,12 @@ export bloodGlucose = 89u
 
 A long line of text here with some mixed in tokens too **bold text __with italics inside__ end** and more text too.
 
+---
+
+### Edge Cases:
+
+Something cool e.g. this thing
+
 `;
 
 console.log(input);
@@ -462,6 +471,27 @@ function tokenizer(source) {
           insertRawParagraph();
           tokens.push({
             type: "bulleted-list",
+            character,
+            children: tokenizer(children),
+            indents: indents ? indents.length / 2 : 0,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+
+        let alphaListMatch = characterBulletsRegex.exec(subStr);
+        if (alphaListMatch && alphaListMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: character,
+            3: children
+          } = alphaListMatch;
+
+          insertRawParagraph();
+          tokens.push({
+            type: "alphanumeric-list",
             character,
             children: tokenizer(children),
             indents: indents ? indents.length / 2 : 0,
@@ -662,6 +692,33 @@ function tokenizer(source) {
         }
       }
       default: {
+        // Capture possible alphanumeric list items here
+        let alphaListMatch = characterBulletsRegex.exec(subStr);
+        if (
+          alphaListMatch &&
+          alphaListMatch.index === 0 &&
+          // workaround edge case of `i.e.` in text or `e.g.` in text
+          (source[current - 1] === undefined || source[current - 1] === "\n")
+        ) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: character,
+            3: children
+          } = alphaListMatch;
+
+          insertRawParagraph();
+          tokens.push({
+            type: "alphanumeric-list",
+            character,
+            children: tokenizer(children),
+            indents: indents ? indents.length / 2 : 0,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+
         state.text += char;
         if (current === source.length - 1 && state.text.length > 0) {
           insertRawParagraph();
@@ -675,8 +732,8 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 output.forEach((token) => {
-  if (token.type === "bulleted-list") {
-    console.log(token);
-  }
-  // console.log(token);
+  // if (token.type === "alphanumeric-list") {
+  //   console.log(token);
+  // }
+  console.log(token);
 });
