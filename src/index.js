@@ -68,7 +68,10 @@ export let strikethroughRegex = new RegExp("~~(.+)~~");
  *   [x]
  * Followed by a space, and then followed by any characters but not a tab or line break
  */
-export let todoRegex = new RegExp("(\\t|\\s{2}){0,}\\[([ xX~])\\] (.+[^s])");
+export let todoRegex = new RegExp(
+  "^(\\t|\\s{2,}){0,}\\[([ xX~])\\] (.+[^s])",
+  "m"
+);
 /**
  * Matches:
  * * thing
@@ -384,6 +387,49 @@ function tokenizer(source) {
           break;
         }
       }
+      case "-": {
+        // horizontal rules
+        let hrMatch = horizontalRuleRegex.exec(subStr);
+        if (hrMatch && hrMatch.index === 0) {
+          let { 0: fullMatch } = hrMatch;
+          insertRawParagraph();
+          tokens.push({
+            type: "horizontal-rule",
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+      }
+      // both todos and list items can be indented
+      // since we normally would treat these like regular whitespace
+      // and get added to the state.text value
+      // we instead also search for todos and lists here
+      // to ensure we capture them as expected
+      case "\t":
+      case " ": {
+        let todoMatch = todoRegex.exec(subStr);
+        if (todoMatch && todoMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: checkedState,
+            3: task
+          } = todoMatch;
+          console.log({ indents, len: indents.length });
+          insertRawParagraph();
+          tokens.push({
+            type: "todo",
+            raw: fullMatch,
+            indents: indents.length,
+            checkedState,
+            task,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+      }
       // bold and list elements
       case "*": {
         let boldMatch = boldRegex.exec(subStr);
@@ -400,23 +446,44 @@ function tokenizer(source) {
           break;
         }
       }
-      case "-": {
-        // horizontal rules
-        let hrMatch = horizontalRuleRegex.exec(subStr);
-        if (hrMatch && hrMatch.index === 0) {
-          let { 0: fullMatch } = hrMatch;
+      // todo list or link elements
+      case `[`: {
+        // could be a todo list start or a link
+        let todoMatch = todoRegex.exec(subStr);
+        if (todoMatch && todoMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: checkedState,
+            3: task
+          } = todoMatch;
           insertRawParagraph();
+
           tokens.push({
-            type: "horizontal-rule",
+            type: "todo",
+            raw: fullMatch,
+            indents: indents ? indents.length : 0,
+            checkedState,
+            task,
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
           break;
         }
-      }
-      // todo list or link elements
-      case `[`: {
-        // could be a todo list start or a link
+        let linkMatch = linkRegex.exec(subStr);
+        if (linkMatch && linkMatch.index === 0) {
+          let { 0: fullMatch, 1: children, 2: href } = linkMatch;
+          insertRawParagraph();
+          tokens.push({
+            type: "link",
+            children,
+            href,
+            raw: fullMatch,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
       }
       // strikethrough or codefences
       case `~`: {
@@ -518,7 +585,6 @@ function tokenizer(source) {
         // headings
         let headingMatch = markdownHeadingRegex.exec(subStr);
         if (headingMatch && headingMatch.index === 0) {
-          console.log(headingMatch);
           let { 0: fullMatch, 1: hashes, 2: title } = headingMatch;
           insertRawParagraph();
           tokens.push({
@@ -546,7 +612,7 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 output.forEach((token) => {
-  if (token.type === "heading") {
+  if (token.type === "todo") {
     console.log(token);
   }
   // console.log(token);
