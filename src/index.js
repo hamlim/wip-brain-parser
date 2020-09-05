@@ -279,12 +279,25 @@ function tokenizer(source) {
   // pointer to the current position in the string
   let current = 0;
   let tokens = [];
+  let state = { text: "" };
+
+  function insertRawParagraph() {
+    if (state.text.length > 0) {
+      tokens.push({
+        type: "paragraph",
+        children: state.text
+      });
+      state.text = "";
+    }
+  }
+
   while (current < source.length) {
     let char = source[current];
 
     switch (char) {
       // newlines
       case "\n": {
+        insertRawParagraph();
         tokens.push({
           type: "line-break",
           raw: char,
@@ -482,6 +495,10 @@ function tokenizer(source) {
         }
       }
       default: {
+        state.text += char;
+        if (current === input.length - 1 && state.text.length > 0) {
+          insertRawParagraph();
+        }
         current++;
       }
     }
