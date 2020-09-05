@@ -10,7 +10,7 @@ title="foo bar"
 title="another title here"
 title="A title with "double quotes in it""
 */
-export let titleRegex = new RegExp('title="(.+)"');
+let titleRegex = new RegExp('title="(.+)"');
 /*
 Test Cases:
 
@@ -41,23 +41,23 @@ Test Cases:
 // doesn't work
 `#foo`
 */
-export let tagRegex = new RegExp("(?<![#[(])#([^#\\s]+)");
+let tagRegex = new RegExp("(?<![#[(])#([^#\\s]+)");
 /**
  * Matches:
  *   **bold text**
  */
-export let boldRegex = new RegExp("\\*\\*(.+)\\*\\*");
+let boldRegex = new RegExp("\\*\\*(.+)\\*\\*");
 /**
  * Matches:
  *   __italics text__
  */
-export let italicsRegex = new RegExp("__(.+)__");
+let italicsRegex = new RegExp("__(.+)__");
 
 /**
  * Matches:
  *   ~~striken text~~
  */
-export let strikethroughRegex = new RegExp("~~(.+)~~");
+let strikethroughRegex = new RegExp("~~(.+)~~");
 /**
  * Matches:
  * Either a tab, or two spaces - 0 or more times
@@ -68,10 +68,7 @@ export let strikethroughRegex = new RegExp("~~(.+)~~");
  *   [x]
  * Followed by a space, and then followed by any characters but not a tab or line break
  */
-export let todoRegex = new RegExp(
-  "^(\\t|\\s{2,}){0,}\\[([ xX~])\\] (.+[^s])",
-  "m"
-);
+let todoRegex = new RegExp("^(\\t|\\s{2,}){0,}\\[([ xX~])\\] (.+[^s])", "m");
 /**
  * Matches:
  * * thing
@@ -79,7 +76,10 @@ export let todoRegex = new RegExp(
  * - dash list
  *   - dash list
  */
-export let regularBulletsRegex = new RegExp("^( {0,}[\\*\\-]) {0,}(.+)");
+let regularBulletsRegex = new RegExp(
+  "^(\\t|\\s{2,}){0,}([\\*\\-]) {0,}(.+)",
+  "m"
+);
 /**
  * Matches:
  * 1. Thing
@@ -89,9 +89,7 @@ export let regularBulletsRegex = new RegExp("^( {0,}[\\*\\-]) {0,}(.+)");
  * A. thing
  *   B. another
  */
-export let characterBulletsRegex = new RegExp(
-  "^( {0,})([a-zA-Z0-9])\\. {0,}(.+)"
-);
+let characterBulletsRegex = new RegExp("^( {0,})([a-zA-Z0-9])\\. {0,}(.+)");
 /**
  * Matches:
  * `code`
@@ -99,7 +97,7 @@ export let characterBulletsRegex = new RegExp(
  * Does not match:
  * `code \`with\` escaped backticks` correctly
  */
-export let inlineCodeRegex = new RegExp("`([^`]+)`");
+let inlineCodeRegex = new RegExp("`([^`]+)`");
 
 /**
  * Matches:
@@ -108,7 +106,7 @@ export let inlineCodeRegex = new RegExp("`([^`]+)`");
  * Doesn't Match:
  * ![some image](image.png)
  */
-export let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)");
+let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)");
 
 /**
  * Matches:
@@ -116,7 +114,7 @@ export let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)");
  * Doesn't Match:
  * [some link](page)
  */
-export let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)");
+let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)");
 /**
  * Matches:
  * # A heading
@@ -131,7 +129,7 @@ export let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)");
  * `# a heading`
  * #tag-here
  */
-export let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)");
+let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)");
 
 /**
  * Matches:
@@ -145,7 +143,7 @@ export let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)");
  * some more code
  * ~~~
  */
-export let markdownCodeFenceRegex = new RegExp(
+let markdownCodeFenceRegex = new RegExp(
   "(```|~~~)(.*)\n([\\s\\S]*?\n)(```|~~~)"
 );
 
@@ -156,13 +154,13 @@ export let markdownCodeFenceRegex = new RegExp(
  * - Foo
  * fjksnfkjdns --- dfskjnfjkdfn
  */
-export let horizontalRuleRegex = new RegExp("^---$", "m");
+let horizontalRuleRegex = new RegExp("^---$", "m");
 
 /**
  * Matches:
  * !!foo!!
  */
-export let markRegex = new RegExp("!!(.+)!!");
+let markRegex = new RegExp("!!(.+)!!");
 
 /**
  * Export regex
@@ -173,7 +171,7 @@ export let markRegex = new RegExp("!!(.+)!!");
  *   100
  *   Lbs
  */
-export let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)");
+let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)");
 
 /**
  * Due date regex
@@ -182,7 +180,7 @@ export let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)");
  * I need to do this thing @today
  * I need to do this thing @tomorrow
  */
-export let dueDateRegex = new RegExp("@(today|tomorrow)");
+let dueDateRegex = new RegExp("@(today|tomorrow)");
 
 // We have some input string, let's call it `input`
 
@@ -224,6 +222,9 @@ A. alpha list item
   B. alpha list item
     C. alpha list item
 
+
+- List item with **bold text**
+  - nested list item with !!highlight!!
 
 ---
 
@@ -400,6 +401,26 @@ function tokenizer(source) {
           current += fullMatch.length;
           break;
         }
+        let bulletMatch = regularBulletsRegex.exec(subStr);
+        if (bulletMatch && bulletMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: character,
+            3: children
+          } = bulletMatch;
+
+          insertRawParagraph();
+          tokens.push({
+            type: "bulleted-list",
+            character,
+            children: tokenizer(children),
+            indents: indents ? indents.length / 2 : 0,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
       }
       // both todos and list items can be indented
       // since we normally would treat these like regular whitespace
@@ -416,14 +437,34 @@ function tokenizer(source) {
             2: checkedState,
             3: task
           } = todoMatch;
-          console.log({ indents, len: indents.length });
           insertRawParagraph();
           tokens.push({
             type: "todo",
             raw: fullMatch,
-            indents: indents.length,
+            indents: indents.length / 2,
             checkedState,
             task,
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+
+        let bulletMatch = regularBulletsRegex.exec(subStr);
+        if (bulletMatch && bulletMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: character,
+            3: children
+          } = bulletMatch;
+
+          insertRawParagraph();
+          tokens.push({
+            type: "bulleted-list",
+            character,
+            children: tokenizer(children),
+            indents: indents ? indents.length / 2 : 0,
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -440,6 +481,26 @@ function tokenizer(source) {
             type: "bold",
             raw: fullMatch,
             children: tokenizer(children),
+            loc: getLocation(fullMatch)
+          });
+          current += fullMatch.length;
+          break;
+        }
+        let bulletMatch = regularBulletsRegex.exec(subStr);
+        if (bulletMatch && bulletMatch.index === 0) {
+          let {
+            0: fullMatch,
+            1: indents,
+            2: character,
+            3: children
+          } = bulletMatch;
+
+          insertRawParagraph();
+          tokens.push({
+            type: "bulleted-list",
+            character,
+            children: tokenizer(children),
+            indents: indents ? indents.length / 2 : 0,
             loc: getLocation(fullMatch)
           });
           current += fullMatch.length;
@@ -462,7 +523,8 @@ function tokenizer(source) {
           tokens.push({
             type: "todo",
             raw: fullMatch,
-            indents: indents ? indents.length : 0,
+            // @TODO I think this is always going to be undefined, and therefore 0
+            indents: indents ? indents.length / 2 : 0,
             checkedState,
             task,
             loc: getLocation(fullMatch)
@@ -485,6 +547,7 @@ function tokenizer(source) {
           break;
         }
       }
+
       // strikethrough or codefences
       case `~`: {
         // could be a strike through or an indeterminate checkbox or a codeblock
@@ -612,7 +675,7 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 output.forEach((token) => {
-  if (token.type === "todo") {
+  if (token.type === "bulleted-list") {
     console.log(token);
   }
   // console.log(token);
