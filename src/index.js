@@ -76,10 +76,7 @@ let todoRegex = new RegExp("^(\\t|\\s{2,}){0,}\\[([ xX~])\\] (.+[^s])", "m");
  * - dash list
  *   - dash list
  */
-let regularBulletsRegex = new RegExp(
-  "^(\\t|\\s{2,}){0,}([\\*\\-]) {0,}(.+)",
-  "m"
-);
+let regularBulletsRegex = new RegExp("^(\\t|\\s{2,}){0,}([\\*\\-]) {0,}(.+)");
 /**
  * Matches:
  * 1. Thing
@@ -90,8 +87,7 @@ let regularBulletsRegex = new RegExp(
  *   B. another
  */
 let characterBulletsRegex = new RegExp(
-  "^(\\t|\\s{2,}){0,}([a-zA-Z0-9])\\. {1,}(.+)",
-  "m"
+  "^(\\t|\\s{2,}){0,}([a-zA-Z0-9])\\. {1,}(.+)"
 );
 /**
  * Matches:
@@ -187,7 +183,9 @@ let dueDateRegex = new RegExp("@(today|tomorrow)");
 
 // We have some input string, let's call it `input`
 
-let input = `title="Foo"
+let input = `
+
+title="Foo"
 
 #testing #tokenizer #tags-with-dashes
 
@@ -297,14 +295,14 @@ function tokenizer(source) {
   // pointer to the current position in the string
   let current = 0;
   let tokens = [];
-  let state = { text: "" };
+  let state = { text: "", tokens: [], eating: false };
 
   function insertRawParagraph() {
     if (state.text.length > 0) {
       tokens.push({
         type: "paragraph",
         children: state.text,
-        loc: [current - state.text.length, current]
+        loc: [current - (state.text.length - 1), current]
       });
       state.text = "";
     }
@@ -322,7 +320,14 @@ function tokenizer(source) {
     switch (char) {
       // newlines
       case "\n": {
-        insertRawParagraph();
+        if (state.eating) {
+          tokens.push({
+            type: "paragraph",
+            children: state.tokens,
+            loc: [current - (state.text.length - 1), current]
+          });
+          state.text = "";
+        }
         tokens.push({
           type: "line-break",
           raw: char,
