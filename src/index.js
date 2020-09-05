@@ -41,23 +41,23 @@ Test Cases:
 // doesn't work
 `#foo`
 */
-export let tagRegex = new RegExp("(?<![#[(])#([^#\\s]+)", "g");
+export let tagRegex = new RegExp("(?<![#[(])#([^#\\s]+)");
 /**
  * Matches:
  *   **bold text**
  */
-export let boldRegex = new RegExp("\\*\\*(.+)\\*\\*", "g");
+export let boldRegex = new RegExp("\\*\\*(.+)\\*\\*");
 /**
  * Matches:
  *   __italics text__
  */
-export let italicsRegex = new RegExp("__(.+)__", "g");
+export let italicsRegex = new RegExp("__(.+)__");
 
 /**
  * Matches:
  *   ~~striken text~~
  */
-export let strikethroughRegex = new RegExp("~~(.+)~~", "g");
+export let strikethroughRegex = new RegExp("~~(.+)~~");
 /**
  * Matches:
  * Either a tab, or two spaces - 0 or more times
@@ -68,10 +68,7 @@ export let strikethroughRegex = new RegExp("~~(.+)~~", "g");
  *   [x]
  * Followed by a space, and then followed by any characters but not a tab or line break
  */
-export let todoRegex = new RegExp(
-  "(\\t|\\s{2}){0,}\\[([ xX~])\\] (.+[^s])",
-  "g"
-);
+export let todoRegex = new RegExp("(\\t|\\s{2}){0,}\\[([ xX~])\\] (.+[^s])");
 /**
  * Matches:
  * * thing
@@ -79,7 +76,7 @@ export let todoRegex = new RegExp(
  * - dash list
  *   - dash list
  */
-export let regularBulletsRegex = new RegExp("^( {0,}[\\*\\-]) {0,}(.+)", "gm");
+export let regularBulletsRegex = new RegExp("^( {0,}[\\*\\-]) {0,}(.+)");
 /**
  * Matches:
  * 1. Thing
@@ -90,8 +87,7 @@ export let regularBulletsRegex = new RegExp("^( {0,}[\\*\\-]) {0,}(.+)", "gm");
  *   B. another
  */
 export let characterBulletsRegex = new RegExp(
-  "^( {0,})([a-zA-Z0-9])\\. {0,}(.+)",
-  "gm"
+  "^( {0,})([a-zA-Z0-9])\\. {0,}(.+)"
 );
 /**
  * Matches:
@@ -100,7 +96,7 @@ export let characterBulletsRegex = new RegExp(
  * Does not match:
  * `code \`with\` escaped backticks` correctly
  */
-export let inlineCodeRegex = new RegExp("`([^`]+)`", "g");
+export let inlineCodeRegex = new RegExp("`([^`]+)`");
 
 /**
  * Matches:
@@ -109,7 +105,7 @@ export let inlineCodeRegex = new RegExp("`([^`]+)`", "g");
  * Doesn't Match:
  * ![some image](image.png)
  */
-export let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)", "gm");
+export let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)");
 
 /**
  * Matches:
@@ -117,7 +113,7 @@ export let linkRegex = new RegExp("(?<!\\!)\\[(.*?)\\]\\((.*?)\\)", "gm");
  * Doesn't Match:
  * [some link](page)
  */
-export let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)", "gm");
+export let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)");
 /**
  * Matches:
  * # A heading
@@ -132,7 +128,7 @@ export let imageRegex = new RegExp("\\!\\[(.*?)\\]\\((.*?)\\)", "gm");
  * `# a heading`
  * #tag-here
  */
-export let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)", "g");
+export let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)");
 
 /**
  * Matches:
@@ -147,8 +143,7 @@ export let markdownHeadingRegex = new RegExp("(?<!`)(#+) (.*)", "g");
  * ~~~
  */
 export let markdownCodeFenceRegex = new RegExp(
-  "(```|~~~)(.*)\n([\\s\\S]*?\n)(```|~~~)",
-  "g"
+  "(```|~~~)(.*)\n([\\s\\S]*?\n)(```|~~~)"
 );
 
 /**
@@ -158,13 +153,13 @@ export let markdownCodeFenceRegex = new RegExp(
  * - Foo
  * fjksnfkjdns --- dfskjnfjkdfn
  */
-export let horizontalRuleRegex = new RegExp("^---$", "gm");
+export let horizontalRuleRegex = new RegExp("^---$", "m");
 
 /**
  * Matches:
  * !!foo!!
  */
-export let markRegex = new RegExp("!!(.+)!!", "g");
+export let markRegex = new RegExp("!!(.+)!!");
 
 /**
  * Export regex
@@ -175,7 +170,7 @@ export let markRegex = new RegExp("!!(.+)!!", "g");
  *   100
  *   Lbs
  */
-export let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)", "gm");
+export let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)");
 
 /**
  * Due date regex
@@ -184,7 +179,7 @@ export let exportRegex = new RegExp("export (.+) = ([0-9]+)([a-zA-Z.]+)", "gm");
  * I need to do this thing @today
  * I need to do this thing @tomorrow
  */
-export let dueDateRegex = new RegExp("@(today|tomorrow)", "g");
+export let dueDateRegex = new RegExp("@(today|tomorrow)");
 
 // We have some input string, let's call it `input`
 
@@ -269,6 +264,12 @@ __italics text__
 
 [google](https://google.com)
 
+---
+
+export weight = 100Lbs
+
+export bloodGlucose = 89u
+
 `;
 
 console.log(input);
@@ -285,14 +286,23 @@ function tokenizer(source) {
     if (state.text.length > 0) {
       tokens.push({
         type: "paragraph",
-        children: state.text
+        children: state.text,
+        loc: [current - state.text.length, current]
       });
       state.text = "";
     }
   }
 
+  function getLocation(fullMatch) {
+    return [current, current + fullMatch.length];
+  }
+
+  let tCharFallThrough = 0;
+
   while (current < source.length) {
     let char = source[current];
+
+    let subStr = source.slice(current);
 
     switch (char) {
       // newlines
@@ -301,52 +311,55 @@ function tokenizer(source) {
         tokens.push({
           type: "line-break",
           raw: char,
-          current
+          loc: [current, current + 1]
         });
         current++;
         break;
       }
       // title
       case "t": {
-        let subStr = source.slice(current);
-        let match = titleRegex.exec(subStr);
-        if (match && match.index === 0) {
-          let { 0: fullMatch, 1: title } = match;
+        let titleMatch = titleRegex.exec(subStr);
+        console.log(titleMatch);
+        if (titleMatch) {
+          let { 0: fullMatch, 1: title } = titleMatch;
           tokens.push({
             type: "title",
             raw: fullMatch,
             title,
-            current
+            loc: getLocation(fullMatch)
           });
-          current++;
+          current += fullMatch.length;
           break;
+        }
+        if (tCharFallThrough === 0) {
+          tCharFallThrough = 1;
+          console.log("Char t, fallthrough");
         }
       }
       // export
       case "e": {
-        let subStr = source.slice(current);
         let match = exportRegex.exec(subStr);
         // not sure what is special with `7` here
         // but if we don't include that then we will find matches for any `e`
         // in the string, but just not the right time to find the match
-        if (match && match.index === 7) {
+        if (match) {
           let { 0: fullMatch, 1: name, 2: value, 3: units } = match;
+          let loc = [current];
+          current += fullMatch.length;
+          loc.push(current);
           tokens.push({
             type: "export",
             raw: fullMatch,
             name,
             value,
             units,
-            current
+            loc
           });
-          current++;
           break;
         }
       }
       // inline and block code elements
       case "`": {
-        // could be a code block or an inline code element
-        let subStr = source.slice(current);
         let codeBlockMatch = markdownCodeFenceRegex.exec(subStr);
         if (codeBlockMatch) {
           let { 0: fullMatch, 2: language, 3: code } = codeBlockMatch;
@@ -356,9 +369,9 @@ function tokenizer(source) {
             raw: fullMatch,
             language,
             code,
-            current
+            loc: getLocation(fullMatch)
           });
-          current += fullMatch.length || 1;
+          current += fullMatch.length;
           break;
         }
 
@@ -370,16 +383,14 @@ function tokenizer(source) {
             type: "inline-code",
             raw: fullMatch,
             code,
-            current
+            loc: getLocation(fullMatch)
           });
-          current += fullMatch.length || 1;
+          current += fullMatch.length;
           break;
         }
       }
       // bold and list elements
       case "*": {
-        // could be a bold string or a list or just a regular char
-        let subStr = source.slice(current);
         let boldMatch = boldRegex.exec(subStr);
         if (boldMatch) {
           let { 0: fullMatch, 1: children } = boldMatch;
@@ -387,23 +398,22 @@ function tokenizer(source) {
             type: "bold",
             raw: fullMatch,
             children,
-            current
+            loc: getLocation(fullMatch)
           });
-          current++;
+          current += fullMatch.length;
           break;
         }
       }
       case "-": {
-        let subStr = source.slice(current);
-
         // horizontal rules
         let hrMatch = horizontalRuleRegex.exec(subStr);
         if (hrMatch) {
+          let { 0: fullMatch } = hrMatch;
           tokens.push({
             type: "horizontal-rule",
-            current
+            loc: getLocation(fullMatch)
           });
-          current += 3;
+          current += fullMatch.length;
           break;
         }
       }
@@ -414,7 +424,6 @@ function tokenizer(source) {
       // strikethrough or codefences
       case `~`: {
         // could be a strike through or an indeterminate checkbox or a codeblock
-        let subStr = source.slice(current);
         let codeBlockMatch = markdownCodeFenceRegex.exec(subStr);
         if (codeBlockMatch) {
           let { 0: fullMatch, 2: language, 3: code } = codeBlockMatch;
@@ -424,9 +433,9 @@ function tokenizer(source) {
             raw: fullMatch,
             language,
             code,
-            current
+            loc: getLocation(fullMatch)
           });
-          current += fullMatch.length || 1;
+          current += fullMatch.length;
           break;
         }
 
@@ -437,16 +446,15 @@ function tokenizer(source) {
             type: "strikethrough",
             raw: fullMatch,
             children,
-            current
+            loc: getLocation(fullMatch)
           });
-          current++;
+          current += fullMatch.length;
           break;
         }
       }
       // italics
       case "_": {
         // could be italics
-        let subStr = source.slice(current);
         let italicsMatch = italicsRegex.exec(subStr);
         if (italicsMatch) {
           let { 0: fullMatch, 1: children } = italicsMatch;
@@ -454,16 +462,15 @@ function tokenizer(source) {
             type: "italics",
             raw: fullMatch,
             children,
-            current
+            loc: getLocation(fullMatch)
           });
-          current++;
+          current += fullMatch.length;
           break;
         }
       }
       // highlight or image elements
       case "!": {
         // could be an image or a mark element
-        let subStr = source.slice(current);
         let highlightMatch = markRegex.exec(subStr);
         if (highlightMatch) {
           let { 0: fullMatch, 1: children } = highlightMatch;
@@ -471,16 +478,15 @@ function tokenizer(source) {
             type: "highlight",
             raw: fullMatch,
             children,
-            current
+            loc: getLocation(fullMatch)
           });
-          current++;
+          current += fullMatch.length;
           break;
         }
       }
 
       // tags or markdown headings
       case "#": {
-        let subStr = source.slice(current);
         let tagMatch = tagRegex.exec(subStr);
         if (tagMatch) {
           let { 0: fullMatch, 1: tag } = tagMatch;
@@ -488,13 +494,19 @@ function tokenizer(source) {
             type: "tag",
             raw: fullMatch,
             tag,
-            current
+            loc: getLocation(fullMatch)
           });
-          current += fullMatch.length - 1;
+          current += fullMatch.length;
+          // console.log(input[current]);
           break;
         }
       }
       default: {
+        if (tCharFallThrough === 1) {
+          console.log("t char fallthrough to default");
+          tCharFallThrough = 2;
+          console.log({ char, current });
+        }
         state.text += char;
         if (current === input.length - 1 && state.text.length > 0) {
           insertRawParagraph();
@@ -506,4 +518,9 @@ function tokenizer(source) {
   return tokens;
 }
 
-console.log(tokenizer(input));
+let output = tokenizer(input);
+output.forEach((token) => {
+  if (token.type === "paragraph") {
+    console.log(token);
+  }
+});
