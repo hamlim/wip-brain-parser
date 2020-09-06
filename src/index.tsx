@@ -291,7 +291,7 @@ Something cool e.g. this thing
 
 `;
 
-console.log(input);
+// console.log(input);
 
 // Next we need to parse this string
 // Parsing I guess means crawling the string and then returning some datastructure
@@ -740,7 +740,7 @@ function tokenizer(source) {
 }
 
 let output = tokenizer(input);
-let types = [...new Set(output.map((t) => t.type))];
+let types = Array.from(new Set(output.map((t) => t.type)));
 console.log(types);
 output.forEach((token) => {
   // if (token.type === "alphanumeric-list") {
