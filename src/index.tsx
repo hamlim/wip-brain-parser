@@ -785,14 +785,26 @@ output.forEach((token) => {
   // console.log(token);
 });
 
-// Join inline tokens in the same line
-// Collect lists into an actual list
-// flatten to as flat of an array at 1 layer (e.g. branches of one thing are just one thing)
+/**
+ *
+ * All this function does is collect list items into a list
+ * it roughly follows the rules that a whole newline should be present
+ * between blocks of list items
+ *
+ * ```brain
+ *
+ * * List #1 item
+ * * another list #1 item
+ *
+ * * List #2
+ * * list #2 item
+ * ```
+ */
+
 function parser(tokens) {
   let tree = [];
   let branch = [];
   let state = {
-    collect: [],
     bulletedList: [],
     alphaList: [],
     todoList: []
@@ -844,7 +856,7 @@ function parser(tokens) {
     }
     previousTokenType = token.type;
     if (current === tokens.length - 1 && branch.length > 0) {
-      tree.push(branch);
+      tree.push(...branch);
     }
   }
   return tree;
