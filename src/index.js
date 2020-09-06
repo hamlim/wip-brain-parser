@@ -187,6 +187,10 @@ let input = `
 
 title="Foo"
 
+Writing some regular text here at the top of the note
+
+Breaking paragraphs with literal line breaks, this should result in two paragraph tokens next to each other
+
 #testing #tokenizer #tags-with-dashes
 
 ---
@@ -295,7 +299,7 @@ function tokenizer(source) {
   // pointer to the current position in the string
   let current = 0;
   let tokens = [];
-  let state = { text: "", tokens: [], eating: false };
+  let state = { text: "" };
 
   function insertRawParagraph() {
     if (state.text.length > 0) {
@@ -320,10 +324,10 @@ function tokenizer(source) {
     switch (char) {
       // newlines
       case "\n": {
-        if (state.eating) {
+        if (state.text.length > 0) {
           tokens.push({
             type: "paragraph",
-            children: state.tokens,
+            children: state.text,
             loc: [current - (state.text.length - 1), current]
           });
           state.text = "";
@@ -736,6 +740,8 @@ function tokenizer(source) {
 }
 
 let output = tokenizer(input);
+let types = [...new Set(output.map((t) => t.type))];
+console.log(types);
 output.forEach((token) => {
   // if (token.type === "alphanumeric-list") {
   //   console.log(token);
@@ -748,32 +754,37 @@ output.forEach((token) => {
 // flatten to as flat of an array at 1 layer (e.g. branches of one thing are just one thing)
 function parser(tokens) {
   let tree = [];
-  let branch = null;
-  let state = {
-    listBranch: null,
-    todoBranch: null
-  };
-  for (let token of tokens) {
-    if (token.type === "line-break") {
-      if (branch) {
-        tree.push(branch);
-      }
-      tree.push(token);
-      branch = null;
-    } else {
-      if (token.type.includes("list")) {
-        if (state.listBranch) {
-          state.listBranch.push(token);
-        } else {
-        }
-      }
-      if (!branch) {
-        branch = [];
-      }
-      branch.push(token);
-    }
-  }
+  // let branch = null;
+  // let state = {
+  //   collect: null,
+  //   bulletedList: null,
+  //   alphaList: null,
+  //   todoList: null,
+  // };
+  // for (let token of tokens) {
+  //   if (token.type === "line-break") {
+  //     if (state.bulletedList) {
+  //       collect
+  //     }
+  //     tree.push(token);
+  //   }
+  //   if (token.type === 'bulleted-list' && state.bulletedList) {
+  //     state.bulletedList.push(token);
+  //   }
+  //   //  else {
+  //   //   if (token.type.includes("list")) {
+  //   //     if (state.listBranch) {
+  //   //       state.listBranch.push(token);
+  //   //     } else {
+  //   //     }
+  //   //   }
+  //   //   if (!branch) {
+  //   //     branch = [];
+  //   //   }
+  //   //   branch.push(token);
+  //   // }
+  // }
   return tree;
 }
 
-console.log(parser(output));
+console.log(output);
