@@ -257,9 +257,9 @@ __italics text__
 
 ---
 
-
 [ ] Testing todos
   [ ] Nested todos
+
 
 [~] indeterminate todo
   [x] done todo
@@ -311,6 +311,23 @@ type TokenType =
   | "tag"
   | "heading";
 
+type BaseToken = {
+  type: TokenType;
+  raw: string;
+  loc: [number, number];
+  [key: string]: any;
+};
+
+type LineBreakToken = BaseToken;
+
+type ParagraphToken = { children: string } & BaseToken;
+
+type TitleToken = { title: string } & BaseToken;
+
+type ExportToken = { name: string; value: string; units: string } & BaseToken;
+
+type CodeBlockToken = { code: string; language?: string } & BaseToken;
+
 // Next we need to parse this string
 // Parsing I guess means crawling the string and then returning some datastructure
 function tokenizer(source) {
@@ -325,7 +342,7 @@ function tokenizer(source) {
         type: "paragraph",
         children: state.text,
         loc: [current - (state.text.length - 1), current]
-      });
+      } as ParagraphToken);
       state.text = "";
     }
   }
@@ -759,7 +776,8 @@ function tokenizer(source) {
 
 let output = tokenizer(input);
 let types = Array.from(new Set(output.map((t) => t.type)));
-console.log(types);
+// console.log(types);
+// console.log(output);
 output.forEach((token) => {
   // if (token.type === "alphanumeric-list") {
   //   console.log(token);
@@ -772,37 +790,64 @@ output.forEach((token) => {
 // flatten to as flat of an array at 1 layer (e.g. branches of one thing are just one thing)
 function parser(tokens) {
   let tree = [];
-  // let branch = null;
-  // let state = {
-  //   collect: null,
-  //   bulletedList: null,
-  //   alphaList: null,
-  //   todoList: null,
-  // };
-  // for (let token of tokens) {
-  //   if (token.type === "line-break") {
-  //     if (state.bulletedList) {
-  //       collect
-  //     }
-  //     tree.push(token);
-  //   }
-  //   if (token.type === 'bulleted-list' && state.bulletedList) {
-  //     state.bulletedList.push(token);
-  //   }
-  //   //  else {
-  //   //   if (token.type.includes("list")) {
-  //   //     if (state.listBranch) {
-  //   //       state.listBranch.push(token);
-  //   //     } else {
-  //   //     }
-  //   //   }
-  //   //   if (!branch) {
-  //   //     branch = [];
-  //   //   }
-  //   //   branch.push(token);
-  //   // }
-  // }
+  let branch = [];
+  let state = {
+    collect: [],
+    bulletedList: [],
+    alphaList: [],
+    todoList: []
+  };
+  let previousTokenType = null;
+  let current = 0;
+  while (current < tokens.length) {
+    let token = tokens[current];
+    current++;
+    let currentType = token.type;
+    if (currentType === "line-break" && previousTokenType === "line-break") {
+      if (state.bulletedList.length > 0) {
+        branch.push({
+          type: "list",
+          variant: "bulleted",
+          listItems: state.bulletedList
+        });
+        state.bulletedList = [];
+      }
+      if (state.alphaList.length > 0) {
+        branch.push({
+          type: "list",
+          variant: "alphanumeric",
+          listItems: state.alphaList
+        });
+        state.alphaList = [];
+      }
+      if (state.todoList.length > 0) {
+        branch.push({
+          type: "list",
+          variant: "todo",
+          listItems: state.todoList
+        });
+        state.todoList = [];
+      }
+      branch.push(token);
+      tree.push(...branch);
+      branch = [];
+    } else {
+      if (currentType === "bulleted-list") {
+        state.bulletedList.push(token);
+      } else if (currentType === "alphanumeric-list") {
+        state.alphaList.push(token);
+      } else if (currentType === "todo") {
+        state.todoList.push(token);
+      } else {
+        branch.push(token);
+      }
+    }
+    previousTokenType = token.type;
+    if (current === tokens.length - 1 && branch.length > 0) {
+      tree.push(branch);
+    }
+  }
   return tree;
 }
 
-console.log(output);
+console.log(parser(output));
