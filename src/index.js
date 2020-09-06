@@ -740,5 +740,40 @@ output.forEach((token) => {
   // if (token.type === "alphanumeric-list") {
   //   console.log(token);
   // }
-  console.log(token);
+  // console.log(token);
 });
+
+// Join inline tokens in the same line
+// Collect lists into an actual list
+// flatten to as flat of an array at 1 layer (e.g. branches of one thing are just one thing)
+function parser(tokens) {
+  let tree = [];
+  let branch = null;
+  let state = {
+    listBranch: null,
+    todoBranch: null
+  };
+  for (let token of tokens) {
+    if (token.type === "line-break") {
+      if (branch) {
+        tree.push(branch);
+      }
+      tree.push(token);
+      branch = null;
+    } else {
+      if (token.type.includes("list")) {
+        if (state.listBranch) {
+          state.listBranch.push(token);
+        } else {
+        }
+      }
+      if (!branch) {
+        branch = [];
+      }
+      branch.push(token);
+    }
+  }
+  return tree;
+}
+
+console.log(parser(output));
