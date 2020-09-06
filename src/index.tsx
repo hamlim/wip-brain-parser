@@ -291,7 +291,25 @@ Something cool e.g. this thing
 
 `;
 
-// console.log(input);
+type TokenType =
+  | "paragraph"
+  | "line-break"
+  | "title"
+  | "todo"
+  | "bulleted-list"
+  | "alphanumeric-list"
+  | "export"
+  | "code-block"
+  | "inline-code"
+  | "horizontal-rule"
+  | "image"
+  | "link"
+  | "bold"
+  | "italics"
+  | "highlight"
+  | "strikethrough"
+  | "tag"
+  | "heading";
 
 // Next we need to parse this string
 // Parsing I guess means crawling the string and then returning some datastructure
